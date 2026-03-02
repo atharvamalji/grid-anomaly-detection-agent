@@ -13,6 +13,7 @@ class AnomalyInput(TypedDict):
 class AgentState(TypedDict, total=False):
     anomaly: AnomalyInput
     anomaly_type: str
+    weather_summary: str | None
     retrieved_chunks: list[RetrievedChunk]
     explanation: str
     recommendation: str

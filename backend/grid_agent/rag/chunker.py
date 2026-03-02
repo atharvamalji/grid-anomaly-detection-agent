@@ -12,16 +12,23 @@ class Chunk:
     chunk_index: int
 
 
-def load_documents(corpus_dir: Path) -> list[tuple[str, str]]:
-    """Load all .txt/.md files in corpus_dir. Returns (filename, text) pairs.
+def _extract_pdf_text(path: Path) -> str:
+    from pypdf import PdfReader
 
-    PDF support can be added later (e.g. pypdf) — for the MVP corpus, plain
-    text/Markdown extracts of NERC/MISO/FERC documents are expected.
-    """
+    reader = PdfReader(str(path))
+    return "\n\n".join(page.extract_text() or "" for page in reader.pages)
+
+
+def load_documents(corpus_dir: Path) -> list[tuple[str, str]]:
+    """Load all .txt/.md/.pdf files in corpus_dir. Returns (filename, text) pairs."""
     docs = []
     for path in sorted(corpus_dir.glob("*")):
         if path.suffix.lower() in (".txt", ".md"):
             docs.append((path.name, path.read_text(encoding="utf-8")))
+        elif path.suffix.lower() == ".pdf":
+            text = _extract_pdf_text(path)
+            if text.strip():
+                docs.append((path.name, text))
     return docs
 
 
