@@ -1,11 +1,10 @@
 # Grid Anomaly Detection Agent
 
 An agentic pipeline that ingests hourly electric grid load data (EIA-930,
-MISO), detects anomalies with a classical ML model, and uses an LLM agent
-to explain likely causes and recommend actions — citing grid reliability
-documentation via RAG. Exposed as a REST API (gRPC as a stretch goal),
-with a Next.js dashboard and read-only export for BI tools (Power BI /
-Tableau).
+MISO/PJM/SPP), detects anomalies with a classical ML model, and uses an LLM
+agent — enriched with real historical weather data — to explain likely
+causes and recommend actions, citing real MISO/NERC reliability
+documentation via RAG. Exposed as a REST API with a Next.js dashboard.
 
 ## Safety framing (read before anything else)
 
@@ -19,13 +18,15 @@ Tableau).
 ## Project structure
 
 - `backend/` — Python pipeline: ingestion, feature engineering, anomaly
-  detection (Isolation Forest / stretch LSTM autoencoder), RAG, LangGraph
-  agent, FastAPI API.
+  detection (Isolation Forest / stretch LSTM autoencoder), RAG, weather
+  enrichment, LangGraph agent, FastAPI API.
 - `frontend/` — Next.js dashboard for investigating flagged anomalies and
   agent explanations.
-- `bi_export/` — notes on the read-only DB view used by Power BI / Tableau.
-- `grpc/`, `k8s/` — stretch goals, currently deferred (see `spec.txt` §7).
 - `spec.txt` — full project spec.
+
+gRPC, Kubernetes, and BI-tool export were considered as stretch goals (see
+`spec.txt` §7/§8) but have been dropped from scope in favor of solidifying
+the core pipeline (test coverage, CI, Docker verification).
 
 See `spec.txt` for architecture, milestones, and extension ideas.
 
