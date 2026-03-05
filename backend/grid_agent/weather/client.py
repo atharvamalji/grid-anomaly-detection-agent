@@ -43,7 +43,7 @@ class OpenMeteoClient:
         anomalies from RAG context alone if this is unavailable.
         """
         try:
-            dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+            dt = datetime.fromisoformat(timestamp)
         except ValueError:
             return None
 

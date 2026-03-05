@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   backend:
     build: ./backend
@@ -10,8 +8,15 @@ services:
     volumes:
       - ./backend/data:/app/data
 
-  # frontend:
-  #   build: ./frontend
-  #   ports:
-  #     - "3000:3000"
-  # Needs frontend/Dockerfile before this can be enabled.
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Server Components in this app fetch the backend at request time
+        # from inside the Next.js server process, so the internal Docker
+        # network hostname works here — this isn't served to the browser.
+        NEXT_PUBLIC_API_BASE_URL: http://backend:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend

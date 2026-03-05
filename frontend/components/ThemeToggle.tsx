@@ -8,8 +8,11 @@ export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
+    // Reading `document`/`window` can only happen after mount (SSR has
+    // neither), so this initial sync must run in an effect, not render.
     const current = document.documentElement.getAttribute("data-theme");
     if (current === "dark" || current === "light") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTheme(current);
     } else {
       setTheme(

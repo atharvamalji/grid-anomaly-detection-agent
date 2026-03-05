@@ -32,6 +32,15 @@ See `spec.txt` for architecture, milestones, and extension ideas.
 
 ## Development
 
-See `Makefile` for common tasks (`make dev`, `make test`, `make lint`,
-`make docker-up`). Setup instructions will be filled in as each component
-is implemented.
+```
+make backend-dev   # run the FastAPI backend locally (needs backend/.venv)
+make frontend-dev  # run the Next.js dashboard locally
+make test          # pytest — backend/tests/
+make lint          # ruff (backend) + eslint (frontend)
+make docker-up     # docker compose up --build — both services together
+```
+
+CI (`.github/workflows/ci.yml`) runs the same lint/test commands on every
+push. Both `docker-compose.yml` services build and have been verified to
+run together — the frontend fetches from the backend over the internal
+Docker network at container start.

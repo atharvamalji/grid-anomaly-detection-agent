@@ -1,28 +1,29 @@
 .PHONY: dev backend-dev frontend-dev ingest train test lint docker-up docker-down
 
-dev: ## Run backend + frontend together (placeholder until both exist)
-	@echo "TODO: run backend-dev and frontend-dev concurrently"
+dev: ## Run backend + frontend together
+	@echo "Run 'make backend-dev' and 'make frontend-dev' in separate terminals."
 
 backend-dev: ## Run the FastAPI backend locally
-	@echo "TODO: uvicorn grid_agent.api.main:app --reload (backend/)"
+	cd backend && . .venv/bin/activate && uvicorn grid_agent.api.main:app --reload
 
 frontend-dev: ## Run the Next.js dashboard locally
-	@echo "TODO: npm run dev (frontend/)"
+	cd frontend && npm run dev
 
 ingest: ## Pull latest hourly demand data from EIA-930
-	@echo "TODO: python -m grid_agent.ingestion.pull (backend/)"
+	cd backend && . .venv/bin/activate && python -m grid_agent.ingestion.pull
 
 train: ## Train/refresh the anomaly detector
-	@echo "TODO: python -m grid_agent.models.train (backend/)"
+	cd backend && . .venv/bin/activate && python -m grid_agent.models.train
 
-test: ## Run backend + frontend test suites
-	@echo "TODO: pytest (backend/), npm test (frontend/)"
+test: ## Run backend test suite
+	cd backend && . .venv/bin/activate && pytest -v
 
 lint: ## Lint backend + frontend
-	@echo "TODO: ruff/mypy (backend/), eslint (frontend/)"
+	cd backend && . .venv/bin/activate && ruff check .
+	cd frontend && npm run lint
 
-docker-up: ## Bring up local stack (Postgres, API, ...)
-	docker-compose up --build
+docker-up: ## Bring up local stack (backend + frontend)
+	docker compose up --build
 
 docker-down: ## Tear down local stack
-	docker-compose down
+	docker compose down

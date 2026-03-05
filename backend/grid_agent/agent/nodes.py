@@ -121,7 +121,7 @@ def recommend_action(state: AgentState, llm: Provider) -> AgentState:
 
 def cite_sources(state: AgentState) -> AgentState:
     chunks = state.get("retrieved_chunks", [])
-    citations = set(c.source for c in chunks)
+    citations = {c.source for c in chunks}
     if state.get("weather_summary"):
         citations.add("Open-Meteo historical weather (archive-api.open-meteo.com)")
     return {**state, "citations": sorted(citations)}

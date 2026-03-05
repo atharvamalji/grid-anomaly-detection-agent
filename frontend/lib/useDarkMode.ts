@@ -18,6 +18,9 @@ export function useDarkMode(): boolean {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
+    // Reading `document`/`window` can only happen after mount (SSR has
+    // neither), so this initial sync must run in an effect, not render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsDark(computeIsDark());
 
     const mql = window.matchMedia("(prefers-color-scheme: dark)");
