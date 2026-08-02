@@ -1,0 +1,39 @@
+[project]
+name = "grid-agent"
+version = "0.1.0"
+description = "Grid Anomaly Detection Agent — ingestion, anomaly detection, RAG, and LangGraph agent backend"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.40",
+    "openai>=1.50",
+    "requests>=2.32",
+    "pandas>=2.2",
+    "pyarrow>=17.0",
+    "python-dotenv>=1.0",
+    "scikit-learn>=1.5",
+    "joblib>=1.4",
+    "faiss-cpu>=1.8",
+    "numpy>=1.26",
+    "langgraph>=0.2",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.7",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.setuptools.packages.find]
+include = ["grid_agent*"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"

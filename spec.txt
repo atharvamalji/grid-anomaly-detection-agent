@@ -1,0 +1,120 @@
+Grid Anomaly Detection Agent — Project Spec
+1. Overview
+
+An agentic pipeline that ingests hourly electric grid load data, detects anomalies using a classical ML model, and uses an LLM agent to explain likely causes and recommend actions — citing grid operation documentation via RAG. Exposed as a production-shaped API (REST, with an optional gRPC layer).
+
+Why this project: directly mirrors "grid reliability and smarter decision-making," closes the classical ML gap (scikit-learn/PyTorch), demonstrates RAG + agent framework experience, and uses MISO's own public data as the source — a natural talking point in an interview with MISO specifically.
+
+Target time: 2–3 weekends for a working MVP; can be extended indefinitely (see Section 8).
+
+2. Architecture
+                    ┌─────────────────────┐
+                    │   EIA-930 API        │
+                    │  (hourly demand)      │
+                    └──────────┬───────────┘
+                               │ ingest (cron / manual)
+                               ▼
+                    ┌─────────────────────┐
+                    │  Data Pipeline        │
+                    │  (Python, pandas)     │
+                    │  - clean, resample    │
+                    │  - feature engineer   │
+                    └──────────┬───────────┘
+                               │
+                 ┌─────────────┴─────────────┐
+                 ▼                             ▼
+     ┌───────────────────┐         ┌───────────────────────┐
+     │  Anomaly Detector   │         │  RAG Knowledge Base     │
+     │  (scikit-learn /    │         │  (grid manuals, NERC     │
+     │   PyTorch)          │         │   reliability standards, │
+     │  - Isolation Forest  │         │   FAISS/Chroma index)    │
+     │    or LSTM autoenc.  │         └───────────┬─────────────┘
+     └──────────┬─────────┘                       │
+                │ anomaly + score                  │
+                ▼                                  │
+     ┌────────────────────────────────────────────▼──────┐
+     │              LLM Agent (LangGraph)                  │
+     │  - receives anomaly + context                        │
+     │  - retrieves relevant reliability docs (RAG)          │
+     │  - reasons about likely cause                         │
+     │  - recommends action                                  │
+     │  - cites source documents                             │
+     └──────────────────────┬───────────────────────────────┘
+                             │
+                             ▼
+                  ┌────────────────────┐
+                  │   REST / gRPC API    │
+                  │   (FastAPI or gRPC)   │
+                  └──────────┬───────────┘
+                             │
+                             ▼
+                  ┌────────────────────┐
+                  │   Simple dashboard    │
+                  │   (optional, Next.js) │
+                  └────────────────────┘
+3. Data source
+Primary: EIA-930 Hourly Electric Grid Monitor API — free API key, hourly demand/generation/interchange data for all Lower-48 balancing authorities, including MISO by name.
+Endpoint family: electricity/rto/region-data/ and electricity/rto/region-sub-ba-data/
+Filter facet: respondent = MISO
+Fallback/backtesting: Kaggle hourly load datasets (e.g. PJM/ERCOT hourly load) if you want a longer historical window than EIA's live API conveniently provides for backtesting.
+RAG corpus: publicly available grid reliability documents — NERC Reliability Standards (public PDFs), MISO's public Business Practices Manuals, FERC filings. Start with 5–10 documents; this is a demo corpus, not a compliance system.
+4. Components
+4.1 Data pipeline
+Pull hourly demand for MISO (and 1–2 comparison BAs) via EIA API.
+Resample/clean, handle missing hours, engineer features: hour-of-day, day-of-week, rolling mean/std, deviation from same-hour-last-week.
+Store in a local Postgres or even SQLite/Parquet for the MVP.
+4.2 Anomaly detector (classical ML — closes your gap)
+Model choice: start with Isolation Forest (scikit-learn) — simple, interpretable, fast to train, no GPU needed. Stretch goal: an LSTM autoencoder in PyTorch for sequence-aware detection, framed as a v2.
+Output: anomaly flag + severity score + the feature values that drove it (for the agent to reason over).
+4.3 RAG layer
+Chunk and embed the reliability documents (FAISS, reusing your existing FAISS experience from the Kelley School project).
+Given an anomaly, retrieve the most relevant passages (e.g. standards about demand spikes, N-1 contingency events, load-shedding procedures).
+4.4 LLM agent (LangGraph)
+Input: anomaly record (timestamp, region, magnitude, contributing features) + retrieved RAG passages.
+Reasoning graph:
+Classify anomaly type (spike, drop, sustained deviation)
+Retrieve relevant reliability guidance
+Generate a plausible-cause explanation, explicitly flagged as a hypothesis, not a diagnosis
+Recommend a next action (e.g. "flag for operator review," "check weather correlation," "verify against neighboring BA data")
+Cite the specific source documents used
+LLM provider: support both OpenAI and Anthropic APIs (hits the JD's "OpenAI, Azure OpenAI, or Anthropic APIs" requirement directly) via a thin provider-swap abstraction.
+4.5 API layer
+REST (FastAPI): POST /analyze — submit a time window, get back detected anomalies + agent explanations. GET /anomalies/recent.
+gRPC (stretch): define a .proto for the same operations, run it alongside REST via a gateway. This is what makes the project cover both protocols the JD lists.
+Containerize: Dockerfile for the API + pipeline; docker-compose for local Postgres/FAISS. Kubernetes manifests as a stretch goal (even a local k3s or minikube deploy is enough to demonstrate awareness).
+4.6 CI/CD
+GitHub Actions: lint, test, build Docker image on push.
+5. Explicit safety framing (important — do this)
+
+Since this deals with critical infrastructure framing, be upfront in the README that:
+
+This is a portfolio/demo project, not a production grid-monitoring tool.
+The LLM's explanations are hypotheses for human review, not autonomous decisions — the agent never takes action, only recommends.
+No real operational or non-public data is used.
+
+This framing itself is good interview material — it shows judgment about deploying AI in safety-relevant domains, which is exactly the kind of thing an "AI leader" role like this cares about.
+
+6. Tech stack summary
+Layer	Tools
+Data ingestion	Python, requests, EIA API
+Storage	SQLite/Postgres, Parquet
+Anomaly detection	scikit-learn (Isolation Forest), PyTorch (stretch: LSTM autoencoder)
+RAG	FAISS, LangChain or raw embeddings
+Agent orchestration	LangGraph
+LLM providers	OpenAI API + Anthropic API
+API	FastAPI (REST), grpcio (stretch)
+Containerization	Docker, docker-compose, Kubernetes manifests (stretch)
+CI/CD	GitHub Actions
+AI coding assistants	Claude Code / Cursor for scaffolding, tests, docs
+7. Milestones
+Data pipeline working — pull, clean, store MISO hourly demand
+Anomaly detector working — Isolation Forest flags plausible anomalies on historical data (backtest against known events, e.g. a heat wave or winter storm, for a good demo narrative)
+RAG + agent working — agent explains a flagged anomaly with cited sources
+API + Docker — wrap it, containerize it, deploy locally
+(Stretch) gRPC + Kubernetes — add the second protocol and a basic K8s deploy
+(Stretch) LSTM autoencoder — v2 of the anomaly detector
+8. Extensions (if you want to keep going)
+Real-time mode: poll EIA API hourly, run detection continuously
+Multi-region comparison (flag anomalies relative to neighboring BAs)
+Simple Next.js dashboard visualizing flagged anomalies + agent explanations
+Slack/webhook alerting for detected anomalies

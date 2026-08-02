@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Node
+node_modules/
+.next/
+frontend/.env*.local
+
+# Env / secrets
+.env
+backend/.env
+
+# Data
+backend/data/raw/*
+!backend/data/raw/.gitkeep
+backend/data/rag_index/
+*.db
+*.sqlite3
+*.parquet
+*.joblib
+backend/data/backtest_results.csv
+
+# OS
+.DS_Store
